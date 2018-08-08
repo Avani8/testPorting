@@ -1,25 +1,98 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<manifest>
-        <remote name="github" fetch="https://github.com" />
-        <remote name="linaro" fetch="https://git.linaro.org" />
+language: c
+build:
+  cache: true
+  cache_dir_list:
+    - /root/.ccache
+  pre_ci_boot:
+    image_name: jforissier/optee_os_ci
+    image_tag: latest
+    pull: true
+    options: "-e HOME=/root"
+  ci:
+    - export LC_ALL=C
+    - export CROSS_COMPILE32="ccache arm-linux-gnueabihf-"
+    - export CROSS_COMPILE64="ccache aarch64-linux-gnu-"
+    - export CFG_DEBUG_INFO=n; export CCACHE_UNIFY=true
+    - export CFG_WERROR=y
+    - function _make() { make -j$(getconf _NPROCESSORS_ONLN) -s O=out $* && ccache -s && ccache -z; }
+    - ccache -z
 
-        <default remote="github" revision="master" />
-
-        <!-- OP-TEE gits -->
-        <project path="optee_client"         name="OP-TEE/optee_client.git" />
-        <project path="optee_os"             name="OP-TEE/optee_os.git" />
-        <project path="optee_test"           name="OP-TEE/optee_test.git" />
-        <project path="build"                name="OP-TEE/build.git">
-                <linkfile src="juno.mk" dest="build/Makefile" />
-        </project>
-
-        <!-- linaro-swg gits -->
-        <project path="linux"                name="linaro-swg/linux.git"                  revision="6e954e2f2cbd412f7bc874bb9145f69713194e52"/>
-        <project path="optee_examples"       name="linaro-swg/optee_examples.git" />
-
-        <!-- Misc gits -->
-        <project path="arm-trusted-firmware" name="apritzel/arm-trusted-firmware.git"     revision="refs/heads/master" clone-depth="1" />
-        <project path="buildroot"            name="buildroot/buildroot.git"               revision="62dca337fe72085d98b7603cfcff1279c48ba7d9" />
-        <project path="u-boot"               name="friendlyarm/u-boot.git"                revision="refs/heads/master" clone-depth="1" />
-        <project path="firmware"             name="friendlyarm/linux.git"                 revision="refs/heads/master" clone-depth="1" />
-</manifest>
+    - _make
+    - _make CFG_TEE_CORE_LOG_LEVEL=4 CFG_TEE_CORE_DEBUG=y CFG_TEE_TA_LOG_LEVEL=4 CFG_CC_OPTIMIZE_FOR_SIZE=n CFG_DEBUG_INFO=y
+    - _make CFG_TEE_CORE_LOG_LEVEL=0 CFG_TEE_CORE_DEBUG=n CFG_TEE_TA_LOG_LEVEL=0 CFG_CC_OPTIMIZE_FOR_SIZE=y CFG_DEBUG_INFO=n
+    - _make CFG_TEE_CORE_LOG_LEVEL=0
+    - _make CFG_TEE_CORE_MALLOC_DEBUG=y
+    - _make CFG_CORE_SANITIZE_UNDEFINED=y
+    - _make CFG_CORE_SANITIZE_KADDRESS=y
+    - _make CFG_CRYPTO=n
+    - _make CFG_CRYPTO_{AES,DES}=n
+    - _make CFG_CRYPTO_{DSA,RSA,DH}=n
+    - _make CFG_CRYPTO_{DSA,RSA,DH,ECC}=n
+    - _make CFG_CRYPTO_{H,C,CBC_}MAC=n
+    - _make CFG_CRYPTO_{G,C}CM=n
+    - _make CFG_CRYPTO_{MD5,SHA{1,224,256,384,512}}=n
+    - _make CFG_WITH_PAGER=y
+    - _make CFG_WITH_PAGER=y CFG_WITH_LPAE=y
+    - _make CFG_WITH_LPAE=y
+    - _make CFG_RPMB_FS=y
+    - _make CFG_RPMB_FS=y CFG_RPMB_TESTKEY=y
+    - _make CFG_REE_FS=n CFG_RPMB_FS=y
+    - _make CFG_WITH_USER_TA=n CFG_CRYPTO=n CFG_SE_API=n CFG_PCSC_PASSTHRU_READER_DRV=y
+    - _make CFG_WITH_PAGER=y CFG_WITH_LPAE=y CFG_RPMB_FS=y CFG_DT=y CFG_TEE_CORE_LOG_LEVEL=1 CFG_TEE_CORE_DEBUG=y CFG_CC_OPTIMIZE_FOR_SIZE=n CFG_DEBUG_INFO=y
+    - _make CFG_WITH_PAGER=y CFG_WITH_LPAE=y CFG_RPMB_FS=y CFG_DT=y CFG_TEE_CORE_LOG_LEVEL=0 CFG_TEE_CORE_DEBUG=n DEBUG=0
+    - _make CFG_BUILT_IN_ARGS=y CFG_PAGEABLE_ADDR=0 CFG_NS_ENTRY_ADDR=0 CFG_DT_ADDR=0 CFG_DT=y
+    - _make CFG_TA_GPROF_SUPPORT=y CFG_ULIBS_GPROF=y
+    - _make CFG_SECURE_DATA_PATH=y
+    - _make PLATFORM=vexpress-qemu_armv8a CFG_ARM64_core=y
+    - _make PLATFORM=vexpress-qemu_armv8a CFG_ARM64_core=y CFG_WITH_PAGER=y
+    - _make PLATFORM=vexpress-qemu_armv8a CFG_ARM64_core=y CFG_TA_GPROF_SUPPORT=y CFG_ULIBS_GPROF=y
+    - _make PLATFORM=stm-b2260
+    - _make PLATFORM=stm-cannes
+    - _make PLATFORM=stm32mp1
+    - _make PLATFORM=vexpress-fvp
+    - _make PLATFORM=vexpress-fvp CFG_ARM64_core=y
+    - _make PLATFORM=vexpress-juno
+    - _make PLATFORM=vexpress-juno CFG_ARM64_core=y
+    - _make PLATFORM=hikey
+    - _make PLATFORM=hikey CFG_ARM64_core=y
+    - _make PLATFORM=mediatek-mt8173 CFG_ARM64_core=y
+    - _make PLATFORM=imx-mx6ulevk
+    - _make PLATFORM=imx-mx6ullevk
+    - _make PLATFORM=imx-mx6sxsabreauto
+    - _make PLATFORM=imx-mx6qsabrelite
+    - _make PLATFORM=imx-mx6qsabresd
+    - _make PLATFORM=imx-mx6dlsabresd
+    - _make PLATFORM=imx-mx7dsabresd
+    - _make PLATFORM=k3-am65x
+    - _make PLATFORM=k3-am65x CFG_ARM64_core=y
+    - _make PLATFORM=ti-dra7xx
+    - _make PLATFORM=ti-am57xx
+    - _make PLATFORM=ti-am43xx
+    - _make PLATFORM=sprd-sc9860
+    - _make PLATFORM=sprd-sc9860 CFG_ARM64_core=y
+    - _make PLATFORM=ls-ls1021atwr
+    - _make PLATFORM=ls-ls1021aqds
+    - _make PLATFORM=ls-ls1043ardb CFG_ARM64_core=y
+    - _make PLATFORM=ls-ls1046ardb CFG_ARM64_core=y
+    - _make PLATFORM=ls-ls1012ardb CFG_ARM64_core=y
+    - _make PLATFORM=zynq7k-zc702
+    - _make PLATFORM=zynqmp-zcu102
+    - _make PLATFORM=zynqmp-zcu102 CFG_ARM64_core=y
+    - _make PLATFORM=d02
+    - _make PLATFORM=d02 CFG_ARM64_core=y
+    - _make PLATFORM=rcar
+    - _make PLATFORM=rcar CFG_ARM64_core=y
+    - _make PLATFORM=rpi3
+    - _make PLATFORM=rpi3 CFG_ARM64_core=y
+    - _make PLATFORM=hikey-hikey960
+    - _make PLATFORM=hikey-hikey960 CFG_ARM64_core=y
+    - _make PLATFORM=hikey-hikey960 CFG_SECURE_DATA_PATH=n
+    - _make PLATFORM=poplar
+    - _make PLATFORM=poplar CFG_ARM64_core=y
+    - _make PLATFORM=rockchip-rk322x
+    - _make PLATFORM=sam
+    - _make PLATFORM=marvell-armada7k8k
+    - _make PLATFORM=marvell-armada3700
+    - _make PLATFORM=synquacer
+    - _make PLATFORM=sunxi-bpi_zero
+    - _make PLATFORM=sunxi-sun50i_h5
