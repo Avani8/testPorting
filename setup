@@ -1,0 +1,44 @@
+  Prerequisites
+
+1) Have a Ubuntu-based distributions to be able to build and run OP-TEE.
+
+2)There are a few packages that needs to be installed to start with. Therefore install the following packages regardless of what target you will use in the end.
+
+$ sudo apt-get install android-tools-adb android-tools-fastboot autoconf \
+	automake bc bison build-essential cscope curl device-tree-compiler \
+	expect flex ftp-upload gdisk iasl libattr1-dev libc6:i386 libcap-dev \
+	libfdt-dev libftdi-dev libglib2.0-dev libhidapi-dev libncurses5-dev \
+	libpixman-1-dev libssl-dev libstdc++6:i386 libtool libz1:i386 make \
+	mtools netcat python-crypto python-serial python-wand unzip uuid-dev \
+	xdg-utils xterm xz-utils zlib1g-dev 
+  
+Install Android repo
+
+mkdir ~/bin
+PATH=~/bin:$PATH
+curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+chmod a+x ~/bin/repo
+
+Get the source code
+
+Choose the manifest corresponding to the platform you intend to use. For example, if you intend to use Raspberry Pi3, then ${TARGET}.xml should be rpi3.xml. The repo sync step will take some time if you aren't referencing an existing tree (see Tips and Tricks below).
+
+$ mkdir -p $HOME/devel/optee
+$ cd $HOME/devel/optee
+$ repo init -u https://github.com/OP-TEE/manifest.git -m ${TARGET}.xml [-b ${BRANCH}]
+$ repo sync
+
+Get the toolchains
+
+In OP-TEE we're using different toolchains for different targets (depends on ARMv7-A ARMv8-A 64/32bit solutions). In any case start by downloading the toolchains by:
+
+$ cd build
+$ make toolchains
+
+Build the solution
+
+We've configured our repo manifests, so that repo will always automatically symlink the Makefile to the correct device specific makefile, that means that you simply start the build by running:
+
+$ make
+
+This step will also take some time, but you can speed up subsequent builds by enabling ccache (again see Tips and Tricks).
