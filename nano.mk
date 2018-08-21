@@ -9,6 +9,8 @@ override COMPILE_S_USER    := 64
 override COMPILE_S_KERNEL  := 64
 
 DEBUG ?= 0
+# Need to set this before including common.mk
+BUILDROOT_GETTY_PORT ?= ttyS0
 
 include common.mk
 
