@@ -14,7 +14,7 @@
         </project>
 
         <!-- linaro-swg gits -->
-        <project path="linux"                name="linaro-swg/linux.git"                  revision="6e954e2f2cbd412f7bc874bb9145f69713194e52"/>
+        <project path="linux"                name="friendlyarm/linux.git"                  revision="refs/heads/master" clone-depth="1" />
         <project path="optee_examples"       name="linaro-swg/optee_examples.git" />
         <project path="optee_benchmark" name="linaro-swg/optee_benchmark.git"/>
 
