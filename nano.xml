@@ -20,7 +20,7 @@
         <project path="optee_benchmark" name="linaro-swg/optee_benchmark.git"/>
 
         <!-- Misc gits -->
-        <project path="arm-trusted-firmware" name="apritzel/arm-trusted-firmware.git"     revision="refs/heads/master" clone-depth="1" />
+        <project path="arm-trusted-firmware" name="Avani8/arm-trusted-firmware.git"     revision="refs/heads/master" clone-depth="1" />
         <project path="buildroot"            name="buildroot/buildroot.git"               revision="62dca337fe72085d98b7603cfcff1279c48ba7d9" />
         <project path="u-boot"               name="friendlyarm/u-boot.git"                revision="refs/heads/master" clone-depth="1" />
         <project path="firmware"             name="friendlyarm/linux.git"                 revision="refs/heads/master" clone-depth="1" />
