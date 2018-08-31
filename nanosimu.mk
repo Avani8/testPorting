@@ -113,6 +113,26 @@ optee-os-clean: optee-os-clean-common
 
 
 
+################################################################################
+# QEMU
+################################################################################
+qemu:
+	cd $(QEMU_PATH); ./configure --target-list=aarch64-softmmu\
+			$(QEMU_CONFIGURE_PARAMS_COMMON)
+	$(MAKE) -C $(QEMU_PATH)
+
+qemu-clean:
+	$(MAKE) -C $(QEMU_PATH) distclean
+
+################################################################################
+# Soc-term
+################################################################################
+soc-term:
+	$(MAKE) -C $(SOC_TERM_PATH)
+
+soc-term-clean:
+	$(MAKE) -C $(SOC_TERM_PATH) clean
+
 
 ################################################################################
 # Build-ROOT
@@ -136,6 +156,61 @@ $(ROOT)/out-br/images/ramdisk.img: $(ROOT)/out-br/images/rootfs.cpio.gz
 	#$(FTP-UPLOAD) $(ROOT)/linux/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi*.dtb
 	#$(FTP-UPLOAD) $(ROOT)/out-br/images/ramdisk.img
 	
+################################################################################
+# Run targets
+################################################################################
+.PHONY: run
+# This target enforces updating root fs etc
+run: all
+	ln -sf $(ROOT)/out-br/images/rootfs.cpio.gz $(BINARIES_PATH)/
+	ln -sf $(ROOT)/u-boot/spl/sunxi-spl.bin $(BINARIES_PATH)/
+	$(MAKE) run-only
+
+QEMU_SMP ?= 1
+
+.PHONY: run-only
+run-only:
+	$(call check-terminal)
+	$(call run-help)
+	$(call launch-terminal,54320,"Normal World")
+	$(call launch-terminal,54321,"Secure World")
+	$(call wait-for-ports,54320,54321)
+	cd $(ARM_TF_PATH)/build/sun50i_h5/release && \
+	$(QEMU_PATH)/aarch64-softmmu/qemu-system-aarch64 \
+		-nographic \
+		-serial tcp:localhost:54320 -serial tcp:localhost:54321 \
+		-smp $(QEMU_SMP) \
+		-machine virt,secure=on -cpu cortex-a53 -m 1057 -bios $(ARM_TF_PATH)/build/sun50i_h5/release/bl31.bin \
+		-s -S -semihosting-config enable,target=native -d unimp \
+		-initrd $(ROOT)/out-br/images/rootfs.cpio.gz \
+		-kernel $(LINUX_PATH)/arch/arm64/boot/Image -no-acpi \
+		-append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2' \
+		$(QEMU_EXTRA_ARGS)
+
+ifneq ($(filter check,$(MAKECMDGOALS)),)
+CHECK_DEPS := all
+endif
+
+ifneq ($(TIMEOUT),)
+check-args := --timeout $(TIMEOUT)
+endif
+
+check: $(CHECK_DEPS)
+	expect qemu-check.exp -- $(check-args) || \
+		(if [ "$(DUMP_LOGS_ON_ERROR)" ]; then \
+			echo "== $$PWD/serial0.log:"; \
+			cat serial0.log; \
+			echo "== end of $$PWD/serial0.log:"; \
+			echo "== $$PWD/serial1.log:"; \
+			cat serial1.log; \
+			echo "== end of $$PWD/serial1.log:"; \
+		fi; false)
+
+check-only: check
+check-clean:
+	rm -f serial0.log serial1.log
+
+
 
 
 ################################################################################
