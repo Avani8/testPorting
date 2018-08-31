@@ -1,0 +1,248 @@
+## 1.1 Prerequisites
+Used ubuntu 18.04 for build system. you need to install following packages.
+
+```bash
+$ sudo apt-get install android-tools-adb android-tools-fastboot autoconf \
+	automake bc bison build-essential cscope curl device-tree-compiler \
+	expect flex ftp-upload gdisk iasl libattr1-dev libc6:i386 libcap-dev \
+	libfdt-dev libftdi-dev libglib2.0-dev libhidapi-dev libncurses5-dev \
+	libpixman-1-dev libssl-dev libstdc++6:i386 libtool libz1:i386 make \
+	mtools netcat python-crypto python-serial python-wand unzip uuid-dev \
+	xdg-utils xterm xz-utils zlib1g-dev
+```
+
+## 1.2 Install Android repo
+Note that here you don't install a huge SDK, it's simply a Python script that
+you download and put in your `$PATH`, that's it. Exactly how to "install" repo
+
+```bash
+
+$ mkdir ~/bin
+$ PATH=~/bin:$PATH
+$ curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+$ chmod a+x ~/bin/repo
+
+```
+
+## 1.3 Get the source code
+Choose the manifest corresponding to the platform you intend to use.
+
+```bash
+$ mkdir -p $HOME/devel/optee
+$ cd $HOME/devel/optee
+$ repo init -u https://github.build.ge.com/212576259/manifest.git -m nano.xml -b master
+$ repo sync
+```
+This will take lot of time as it will fetch all the different repo contents and create copies of it in your local.
+
+## 1.4 Get the toolchains
+OP-TEE is using different toolchains for different targets (depends on
+ARMv8-A 64/32bit solutions). In any case start by downloading the
+
+toolchains by:
+```bash
+$ cd build
+$ make toolchains
+```
+
+## 1.5 Build the solution
+I've configured our repo manifests, so that repo will always automatically
+symlink the `Makefile` to the correct device specific makefile, that means that
+you simply start the build by running:
+
+```bash
+$ make -j8
+```
+This step will take long time as it is compiling all the souce code.
+now, you can make all the solution 
+```bash
+$ make all
+```
+
+note : if you are using qemu for debuging you can use following to command to run the tests
+
+```bash 
+$ make run all
+```
+
+
+## 1.6 Flash the device
+On the device :
+```bash
+$ make flash
+```
+This is just to make sd card ready.
+
+## 1.7 Copy rootfs to sd card 
+
+```bash
+$ cd out-br 
+$ sudo cp -r rootfs.cpio.gz /media/rootfs
+```
+##1.8 Copy boot files to sd card 
+
+
+here you have two ways : 
+
+1) you can copy all the files to sd card 
+2) create a boot.img and copy img to sd card
+
+#Preparing for boot image 
+```bash
+$ mkdir bootimg
+$ cd bootimg
+$ sudo cp -r ../linux/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi*.dtb .
+$ sudo cp -r ../linux/arch/arm64/boot/dts/allwinner/overlay* .
+$ sudo cp -r ../linux/arch/arm64/boot/Image .
+$ sudo cp ../build/boot.cmd .
+$ sudo cp -r ../rootfs.cpio.gz .
+$ sudo mkimage -C none -A arm -T script -d boot.cmd boot.scr 
+
+```
+#Creating boot image
+```bash
+$ cd ..
+$ sudo mkisofs -lJR -o boot.iso bootimg/
+$ sudo dd if=boot.iso of=boot.img
+
+```
+
+now copy the image to /media/boot partition on sd card 
+
+
+One last step is to update u-boot onto sdcard 
+
+```bash
+$ dd if=spl/sunxi-spl.bin of=/dev/sdX bs=1024 seek=8
+$ dd if=u-boot.itb of=/dev/sdX bs=1024 seek=40
+
+```
+where sdX is the sd card.
+
+ 
+remove the card and put it in nanopi neo plus 2 board 
+
+## 1.8  Boot up the device
+once the device boots from sd card login using 
+```bash
+$ root 
+$fa
+
+```
+
+## 1.10 Load tee-supplicant
+then start tee-supplicant by running:
+```bash
+$ tee-supplicant &
+```
+here is where I am currently debugging the issue. 
+ref. discussion 
+
+https://github.com/linaro-swg/linux/issues/65
+
+
+## 1.11 Run xtest
+The entire xtest test suite has been deployed when you we're running `$ make
+run` in previous step, i.e, in general there is no need to copy any binaries
+manually. Everything has been put into the root FS automatically. So, to run
+xtest, you simply type:
+```bash
+$ xtest
+```
+
+
+
+## Some Userfull notes and learning details for all the modules in the framework 
+
+
+1) Creating optee_os for support of Nanopi neo plus 2 board
+
+This was the most dificult part to collect all the device specific configuration dts and files 
+currently optee does not support nanopi neo plus 2 board so I've to create from screatch 
+importent details can be seen in 
+```bash
+https://github.build.ge.com/212576259/optee_os/tree/master/core/arch/arm/sunxi
+```
+
+2) Creating U-boot for  Nanopi neo plus 2 board
+
+I did not created git repo as most of the work is already done by frendlyarm for u-boot 
+I am just making call from xml to grab the repo and nano.mk is doing the build for it but if you wish to configure manually here are the steps:
+```bash
+$ git clone https://github.com/friendlyarm/u-boot.git
+$ cd u-boot
+$ git checkout sunxi-v2017.x
+$ apt-get install swig python-dev python3-dev
+$ make nanopi_h5_defconfig CROSS_COMPILE=aarch64-linux-gnu-
+$ make CROSS_COMPILE=aarch64-linux-gnu-
+```
+
+after sucessfull compilation of u-boot you can update uboot on nanopi neo plus 2 by copying following to sd card 
+```bash
+$ dd if=spl/sunxi-spl.bin of=/dev/sdX bs=1024 seek=8
+$ dd if=u-boot.itb of=/dev/sdX bs=1024 seek=40
+
+```
+
+where sdX is the sd card drive 
+
+3) Creating Arm-Trusted Firmware for Nanopi neo plus 2 board
+
+This is another very complex part of the development of the framwork since nanopi neo plus 2 uses device tree of sun50iw2p1 and ATF is not available online I took the souce code from lichee h5 branch and build the ATF. all the source code is available in sun50i_h5 folder in ATF repo  
+very important part here is passing the correct flag parameters for bl31.bin creation. snippet of the code is as follow
+ 
+ 
+ ```bash
+ ARM_TF_FLAGS ?= \
+        BL32=$(OPTEE_OS_HEADER_V2_BIN) \
+	BL32_EXTRA1=$(OPTEE_OS_PAGER_V2_BIN) \
+	BL32_EXTRA2=$(OPTEE_OS_PAGEABLE_V2_BIN) \
+	BL33=$(UBOOT_BIN) \
+	PLAT=sun50i_h5 \
+	SPD=opteed
+ ```
+to create secure_os EL 32 access by normal world we need to pass bl32 header , bl33 uboot and plat=sun50i_h5 (this is comming from lichee source code ) 
+SPD = Secure payload Dispacher is optee as the can be seen from optee archectecture diagram. 
+
+
+
+4) U-boot compilation 
+
+download the toolchain from 
+
+```bash 
+
+https://drive.google.com/drive/folders/17iKxLNhKUDhlrhuiZEne7IrSDQB4YOPc
+$ mkdir -p /opt/FriendlyARM/toolchain
+$ tar xf gcc-linaro-6.3.1-2017.02-x86_64_aarch64-linux-gnu.tar.xz -C /opt/FriendlyARM/toolchain/
+$ . ~/.bashrc
+
+```
+and now compile u-boot 
+```bash
+$ git clone https://github.com/friendlyarm/u-boot.git
+$ cd u-boot
+$ git checkout sunxi-v2017.x
+$ apt-get install swig python-dev python3-dev
+$ make nanopi_h5_defconfig CROSS_COMPILE=aarch64-linux-gnu-
+$ make CROSS_COMPILE=aarch64-linux-gnu-
+```
+
+5) Kernel compilation
+
+I am taking frendly arm linux kernel for normal world all the steps for manually installing kernel module can be found from below 
+
+```bash
+$ git clone https://github.com/friendlyarm/linux.git -b sunxi-4.x.y --depth 1
+$ touch .scmversion
+$ make sunxi_arm64_defconfig ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+$ make Image dtbs ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+
+```
+
+
+
+
+
+
+
