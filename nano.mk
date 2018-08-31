@@ -47,11 +47,13 @@ ARM_TF_FLAGS ?= \
 	BL32_EXTRA2=$(OPTEE_OS_PAGEABLE_V2_BIN) \
 	BL33=$(UBOOT_BIN) \
 	PLAT=sun50i_h5 \
+	ARM_TSP_RAM_LOCATION=dram \
+	DEBUG=0 \
 	SPD=opteed
 
-
+#
 arm-tf: optee-os u-boot
-	$(ARM_TF_EXPORTS) $(MAKE) -C $(ARM_TF_PATH) $(ARM_TF_FLAGS) all fip
+	$(ARM_TF_EXPORTS) $(MAKE) -C $(ARM_TF_PATH) $(ARM_TF_FLAGS)  all fip
 
 arm-tf-clean:
 	$(ARM_TF_EXPORTS) $(MAKE) -C $(ARM_TF_PATH) $(ARM_TF_FLAGS) clean
@@ -63,13 +65,14 @@ arm-tf-clean:
 UBOOT_EXPORTS ?= CROSS_COMPILE="$(CCACHE)$(AARCH64_CROSS_COMPILE)"
 
 UBOOT_DEFCONFIG_FILES := \
-	$(UBOOT_PATH)/configs/nanopi_h5_defconfig \
-	$(ROOT)/build/kconfigs/UBOOT_nano.conf
+	$(UBOOT_PATH)/configs/nanopi_neo_plus2_defconfig \
+	$(ROOT)/build/kconfigs/uboot_nano.conf
 
+uboot-defconfig: $(UBOOT_PATH)/.config
 .PHONY: u-boot
 u-boot:
-	cd $(UBOOT_PATH) && \
-		scripts/kconfig/merge_config.sh $(UBOOT_DEFCONFIG_FILES)
+	cd $(UBOOT_PATH) \
+		
 	$(UBOOT_EXPORTS) $(MAKE) -C $(UBOOT_PATH) all
 
 u-boot-clean:
