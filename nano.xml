@@ -9,7 +9,7 @@
         <project path="optee_client"         name="OP-TEE/optee_client.git" />
         <project path="optee_test"           name="OP-TEE/optee_test.git" />
         
-        </project>
+       
 
         <!-- linaro-swg gits -->
         <project path="linux"                name="friendlyarm/linux.git"                  revision="refs/heads/master" clone-depth="1" />
@@ -24,5 +24,6 @@
         <project path="build"                name="Avani8/build.git">
                 <linkfile src="nano.mk" dest="build/Makefile" />
                 <linkfile src="../toolchains/aarch64/bin/aarch64-linux-gnu-gdb" dest="build/gdb" />
+                 </project>
         
 </manifest>
