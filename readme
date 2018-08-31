@@ -91,11 +91,11 @@ here you have two ways :
 ```bash
 $ mkdir bootimg
 $ cd bootimg
-$ sudo cp -r ../linux/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi*.dtb .
-$ sudo cp -r ../linux/arch/arm64/boot/dts/allwinner/overlay* .
-$ sudo cp -r ../linux/arch/arm64/boot/Image .
-$ sudo cp ../build/boot.cmd .
-$ sudo cp -r ../rootfs.cpio.gz .
+$ sudo cp -r ../../../linux/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi*.dtb .
+$ sudo cp -r ../../../linux/arch/arm64/boot/dts/allwinner/overlay* .
+$ sudo cp -r ../../../linux/arch/arm64/boot/Image .
+$ sudo cp ../../../build/boot.cmd .
+$ sudo cp -r ../../rootfs.cpio.gz .
 $ sudo mkimage -C none -A arm -T script -d boot.cmd boot.scr 
 
 ```
