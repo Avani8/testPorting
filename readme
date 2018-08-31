@@ -12,8 +12,7 @@ $ sudo apt-get install android-tools-adb android-tools-fastboot autoconf \
 ```
 
 ## 1.2 Install Android repo
-Note that here you don't install a huge SDK, it's simply a Python script that
-you download and put in your `$PATH`, that's it. Exactly how to "install" repo
+Note that here you don't install a huge SDK, it's simply a Python script that you download and put in your `$PATH`, that's it. Exactly how to "install" repo
 
 ```bash
 
